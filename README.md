@@ -52,11 +52,15 @@ We name everything from memory locations, data, pieces of code etc. A name can r
 
 Names bring order to the chaotic environment of programmers and thus, we better be good at this skill.
 
+**[⬆ back to top](#table-of-contents)**
+
 ### **Use intention revealing name**
 
 This rule enforces that programmers should make their code read like well written prose by naming parts <br>
 of their code perfectly. With such good naming, a programmer will never need to resort to comments or unneccesary <br> docstrings.
 Below is a code snippet from a software system. Would you make sense of it without any explanation?
+
+**Bad:**
 
 ```python
 from typing import List
@@ -78,6 +82,8 @@ It assumes that each order is coded as a list of ints and that the second is the
 
 This code is so abstract to be useful. It is so impilicit. Let us try to name things well
 
+**Bad:**
+
 ```python
 def get_pending_orders(orders : List[List[int]])->List[List[int]]:
     pending_orders : List[List[int]] = []
@@ -88,6 +94,8 @@ def get_pending_orders(orders : List[List[int]])->List[List[int]]:
 ```
 
 Phew!! This is much more readable. We have somehow simplified the code but it still looks so technical. What is this List[List[int]] cryptic piece of code saying to us? What about order[1] == 0?? Let us introduce some abstractions to perfectly model the application domain.
+
+**Good:**
 
 ```python
 from typing import List
@@ -104,6 +112,8 @@ class Order():
 ```
 
 We have now introduced a model entity in our code base, in this case an Order class. This order class should know how to check its pending status since its implementation should be hidden from us. We don't know the data structure that was used to implement its details and so clients shouldn't assume anything... <font color=red>order[1] == 0 is illegal!!!</font>
+
+**Good:**
 
 ```python
 def get_pending_orders(orders : List[Order])->List[Order]:
