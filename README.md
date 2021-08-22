@@ -30,13 +30,21 @@
 3. [Functions](#functions)
 4. [Objects and Data Structures](#objects-and-data-structures)
 5. [Classes](#classes)
-6. [SOLID](#solid)
+6. [SOLID Principles](#SOLID Principles)
+   - [Single Responsibility Principle](#Single-Responsibility-Principle)
+   - [Open/Close Principle](#Open/Close-Principle)
+   - [Liskov Substitution Principle](#Liskov-Substitution)
+   - [Interface Segregation Principle](#Interface-Segregation)
+   - [Dependency Inversion Principle](#Dependency-Inversion-Principle)
 7. [Testing](#testing)
 8. [Concurrency](#concurrency)
 9. [Error Handling](#error-handling)
 10. [Formatting](#formatting)
 11. [Comments](#comments)
 12. [Translation](#translation)
+
+![Humorous image of software quality estimation as a count of how many expletives
+you shout when reading code](https://en.wikipedia.org/wiki/Robert_C._Martin#/media/File:Robert_C._Martin_surrounded_by_computers.jpg)
 
 ## Introduction
 
@@ -46,15 +54,17 @@ adapted for Python. This is not a style guide. It's a guide to producing readabl
 
 ## Naming Things
 
-Modern software is so complex that no one can understand all parts of a non-trivial project. The only way humans tame details is through abstractions. With abstraction, we focus on the essential and forget about the non-essential. The most useful abstraction is **naming**.
+Modern software is so complex that no one can understand all parts of a non-trivial project alone. The only way humans tame details is through abstractions. With abstraction, we focus on the essential and forget about the non-essential. You remember the way you learned body biology?? You focused on one system at a time, digestive, nervous, cardiovascular e.t.c That is abstraction at work.
+
+The most fundamental abstraction in writing software is **naming**. Naming things is just one part of the story, using good names is a skill that unfortunately, is not owned by most programmers.
 
 We name everything from memory locations, data, pieces of code etc. A name can refer to a simple concept like a variable or a function to complex structures like classes, modules, packages and entire programs.
 
-Names bring order to the chaotic environment of programmers and thus, we better be good at this skill.
+Good names bring order to the chaotic environment of crafting software and hence, we better be good at this skill so that we can enjoy this game.
 
 **[⬆ back to top](#table-of-contents)**
 
-### **Use intention revealing name**
+### **Use intention revealing names**
 
 This rule enforces that programmers should make their code read like well written prose by naming parts <br>
 of their code perfectly. With such good naming, a programmer will never need to resort to comments or unneccesary <br> docstrings.
@@ -66,41 +76,26 @@ Below is a code snippet from a software system. Would you make sense of it witho
 from typing import List
 
 def f(a : List[List[int]])->List[List[int]]:
-    lst : List[List[int]] = []
-    for i in a:
-        if(i[1] == 0):
-            lst.append(i)
-    return lst
+    return [i for i in a if i[1] == 0]
 ```
 
-This is a small piece of code without fancy abstractions. All it contains are generics (List), iterations (loops),
-selections (ifs), variables and operators. But why does it seem so cryptic?? Something has gone wrong here.
+It would be ashaming that someone would fail to understand such a simple function. What could have gone wrong??
 
-The above code snippet has the worst variable and parameter and function names out there. The code snippet takes in a bunch of orders and returns pending orders.
+The above code snippet has the worst variable, parameter and function names out there. This code snippet is supposed to take in a bunch of orders and return the pending orders.
 
-It assumes that each order is coded as a list of ints and that the second is the order status. It assumes 0 means pending and 1 means cleared.
+It assumes that each order is coded as a list of ints (List[int]) and that the second element is the order status. It assumes 0 means pending and 1 means cleared.
 
-This code is so abstract to be useful. It is so impilicit. Let us try to name things well
+Notice the first problem... that snippet doesn't contain knowledge about the domain. This is a design smell known as a **missing abstraction**. We are missing the Order abstraction.
 
-**Bad:**
+> **Missing Abstraction** <br>
+> This smell arises when clumps of data are used instead creating a class or an interface
 
-```python
-def get_pending_orders(orders : List[List[int]])->List[List[int]]:
-    pending_orders : List[List[int]] = []
-    for order in orders:
-        if(order[1] == 0):
-            pending_orders.append(order)
-    return pending_orders
-```
-
-Phew!! This is much more readable. We have somehow simplified the code but it still looks so technical. What is this List[List[int]] cryptic piece of code saying to us? What about order[1] == 0?? Let us introduce some abstractions to perfectly model the application domain.
-
-**Good:**
+We still have a thorny problem right now, we lack meaningful domain abstractions. One of the ways of solving the missing abstraction smell is to **map domain entities**. So lets create an abstraction called Order.
 
 ```python
 from typing import List
 
-class Order():
+class Order:
     def __init__(self, order_id : int, order_status : int) -> None:
         self._order_id = order_id
         self._order_status = order_status
@@ -111,29 +106,21 @@ class Order():
     #more code goes here
 ```
 
-We have now introduced a model entity in our code base, in this case an Order class. This order class should know how to check its pending status since its implementation should be hidden from us. We don't know the data structure that was used to implement its details and so clients shouldn't assume anything... <font color=red>order[1] == 0 is illegal!!!</font>
+Let us now refactor our entity names and use our newly created abstraction too. We arrive at the following code snippet.
 
-**Good:**
+**Better:**
 
 ```python
 def get_pending_orders(orders : List[Order])->List[Order]:
-    pending_orders : List[Order] = []
-    for order in orders:
-        if(order.is_pending()):
-            pending_orders.append(order)
-    return pending_orders
+    return [order for order in orders if order.is_pending()]
 ```
 
-Phew!! The function now seems too precise to be true. It takes in a list of order and uses the object's contains_loops method to accomplish its task. This code reads like well written prose. It is typical of Object Oriented Code. We have achieved encapsulation and abstraction. Good naming can clear our achictecture significantly.
+This function reads like well written prose.
 
-We now let the Order class implement the logic to find the pending status because it knows better to do that than anyone else. We call this the **Most Qualified Rule**. We have also arrived at the **Encapsulation rule** by letting the Order class impement that ugly logic making our function clean.
+Notice that the get_pending_orders function delegates the logic of finding the status to the Order class. This is because the Order class knows its internal representation more than anyone else, so it better implement this logic. This is known as the **Most Qualified Rule** in OOP.
 
 > **Most Qualified Rule** <br>
 > Work should be assigned to the class that knows best how to do it.
-
-> **The Rule of Encapsulation** <br>
-> A class’s implementation details should be hidden from its clients
-> as much as possible.
 
 <font color=blue>You can not achieve good naming with a bad architecture. You can see that mapping domain entities into our code has made our code so simple.</font>
 
@@ -158,3 +145,20 @@ We now let the Order class implement the logic to find the pending status becaus
 ### Gratuitous-Context
 
 ### Avoid-Mental-Mapping
+
+## **SOLID Principles**
+
+### 1. Single-Responsibility-Principle
+
+The single responsibility principle (SRP) instructs developers to write code that has one and only one
+reason to change. If a class has more than one reason to change, it has more than one responsibility.
+Classes with more than a single responsibility should be broken down into smaller classes, each of
+which should have only one responsibility and reason to change.
+
+This section explains that process and shows you how to create classes that only have a single
+responsibility but are still useful. Through a process of delegation and abstraction, a class that contains
+too many reasons to change should delegate one or more responsibilities to other classes.
+
+It is difficult to overstate the importance of delegating to abstractions. It is the lynchpin of adaptive
+code and, without it, developers would struggle to adapt to changing requirements in the way
+that Scrum and other Agile processes demand.
