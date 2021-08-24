@@ -11,7 +11,7 @@
    - [Meaningful Distinctions](#Meaningful-Distinctions)
    - [Avoid Disinformation](#Avoid-Disinformation)
    - [Pronounceable Names](#Pronounceable-names)
-   - [Searchable Names](#Searchable-Names)
+   - [Search-able Names](#Searchable-Names)
    - [Don't be cute](#Don't-be-cute)
    - [Avoid Encodings](#Avoid-Encodings)
      - [Hungarian Notation](#Hungarian-Notation)
@@ -29,6 +29,9 @@
    - [Use Solution Domain Names]()
    - [Use Problem Domain Names]()
    - [Add Meaningful Context]()
+   
+   
+   
 3. [Functions](#functions)
    - [Small](#Small)
    - [Do One Thing](#Do-One-Thing)
@@ -41,11 +44,12 @@
      - [Niladic Functions](#Niladic-Functions)
      - [Argument Mutation](#Argument-Mutation)
      - [Exceptions](#Exceptions)
+     - [I/O](#I/O)
    - [Command Query Separation](#Command-Query-Separation)
    - [Don't Repeat Yourself](#Don't-Repeat-Yourself)
 4. [Objects and Data Structures](#objects-and-data-structures)
 5. [Classes](#classes)
-6. [SOLID Principles](#SOLID Principles)
+6. [SOLID Principles](#SOLID-Principles)
    - [Single Responsibility Principle](#Single-Responsibility-Principle)
    - [Open/Close Principle](#Open/Close-Principle)
    - [Liskov Substitution Principle](#Liskov-Substitution)
@@ -77,9 +81,10 @@ Good names bring order to the chaotic environment of crafting software and hence
 **[⬆ back to top](#table-of-contents)**
 
 ### **Use intention revealing names**
+---
 
 This rule enforces that programmers should make their code read like well written prose by naming parts <br>
-of their code perfectly. With such good naming, a programmer will never need to resort to comments or unneccesary <br> docstrings.
+of their code perfectly. With such good naming, a programmer will never need to resort to comments or unnecessary <br> doc strings.
 Below is a code snippet from a software system. Would you make sense of it without any explanation?
 
 **Bad: :angry: **
@@ -93,16 +98,17 @@ def f(a : List[List[int]])->List[List[int]]:
 
 It would be ashaming that someone would fail to understand such a simple function. What could have gone wrong??
 
-The above code snippet has the worst variable, parameter and function names out there. This code snippet is supposed to take in a bunch of orders and return the pending orders.
+The problem is simple.This code is littered with **mysterious names**. We have to agree that this is code and not a detective novel. Code should be clear and precise.
 
-It assumes that each order is coded as a list of ints (List[int]) and that the second element is the order status. It assumes 0 means pending and 1 means cleared.
+What this code does is so trivial. It takes in a collection of orders and returns the pending orders. Let's pause for a moment and appreciate the extreme over engineering in this solution.
+The programmer assumes that each order is coded as a list of `ints` (`List[int]`) and that the second element is the order status. He decides that 0 means pending and 1 means cleared.
 
 Notice the first problem... that snippet doesn't contain knowledge about the domain. This is a design smell known as a **missing abstraction**. We are missing the Order abstraction.
 
-> **Missing Abstraction** <br>
+> @icon-info-circle **Missing Abstraction** <br>
 > This smell arises when clumps of data are used instead creating a class or an interface
 
-We still have a thorny problem right now, we lack meaningful domain abstractions. One of the ways of solving the missing abstraction smell is to **map domain entities**. So lets create an abstraction called Order.
+We have a thorny problem right now, we lack meaningful domain abstractions. One of the ways of solving the missing abstraction smell is to **map domain entities**. So lets create an abstraction called Order.
 
 ```python
 from typing import List
@@ -118,6 +124,8 @@ class Order:
     #more code goes here
 ```
 
+> @icon-info-circle We could also have used the **namedtuple** in the python standard library but we won't be too functional that early. Let us stick with OOP for now. **namedtuples** contain only data and not data with code that acts on it.
+
 Let us now refactor our entity names and use our newly created abstraction too. We arrive at the following code snippet.
 
 **Better: :smile:**
@@ -129,12 +137,49 @@ def get_pending_orders(orders : List[Order])->List[Order]:
 
 This function reads like well written prose.
 
-Notice that the get_pending_orders function delegates the logic of finding the status to the Order class. This is because the Order class knows its internal representation more than anyone else, so it better implement this logic. This is known as the **Most Qualified Rule** in OOP.
+Notice that the `get_pending_orders()` function delegates the logic of finding the order status to the Order class. This is because the Order class knows its internal representation more than anyone else, so it better implement this logic. This is known as the **Most Qualified Rule** in OOP.
 
-> **Most Qualified Rule** <br>
+> @icon-info-circle **Most Qualified Rule** <br>
 > Work should be assigned to the class that knows best how to do it.
 
-<font color=blue>You can not achieve good naming with a bad architecture. You can see that mapping domain entities into our code has made our code so simple.</font>
+
+> @icon-info-circle We are using the listcomp for a reason. Listcomps are examples of **iterative expressions**. They serve one role and that is creating lists. On the other hand, for-loops are **iterative commands** and thus accomplish a myriad of tasks. Pick the right tool for the job. 
+
+Never allow client code know your implementation details. In fact the ACM A.M Laureate Babra Liskov says it soundly in her book [Program development in Java. Abstraction, Specification and OOD](https://book4you.org/book/1164544/93467d). The **Iterator design pattern** is one way of solving that problem.
+
+Here is another example of a misleading variable name.
+
+**Bad** :angry:
+```python
+student_list= {'kasozi','vincent', 'bob'}
+```
+
+This variable name is so misleading.
+* It contains noise. why the list suffix?
+* It is lying to us. Lists are not the same as sets. They may all be collections but they are not the same at all.
+
+To prove that lists are not sets, below is a code snippet that returns the methods in the List class that aren't in the Set class.
+
+```python
+sorted(set(dir(list())) - set(dir(set())))
+```
+Once it has executed, `append()` is one of the returned functions implying that sets don't support `append()` but instead support `add()`. So you write the code below, your code breaks.
+
+>@icon-info-circle Sets are not sequences like lists. In fact, they are unordered collections and so adding the `append()` method to the set class would be misleading. `append()` means we are adding at the end which may not be the case with sets.
+
+**Bad** :angry:
+```python
+student_list= {'kasozi','vincent', 'bob'}
+student_list.append('martin') #It breaks!!
+```
+It is better to use a different variable name is neutral to the data structure being used.
+In this case, once you decide to change data structure used, your variable won't destroy the semantics of your code.
+
+**Good** :smile:
+```python
+students = {'kasozi', 'vincent', 'bob'}
+```
+> @icon-info-circle You can not achieve good naming with a bad design. You can see that mapping domain entities into our code has made our codebase use natural names.
 
 ### Meaningful-Distinctions
 
@@ -197,7 +242,7 @@ class Customer:
 
 Niladic functions have this tendency to depend on some invisible input especially if such a function is member function of a class. Since all class members share the same class variables, most methods aren't pure at all. Class variable values will always depend on which method was called last. In a nutshell, most niladic functions depend on some **global state** in this case self.first_name.
 
-The same can be said to functions that return None. These too aren't pure functions. If a function doesn't return, then it is doing something that is affecting global state. Such functions can not be composed in fluent APIs. The best examples are the python sort method and sorted built-in function.
+The same can be said to functions that return None. These too aren't pure functions. If a function doesn't return, then it is doing something that is affecting global state. **Such functions can not be composed in fluent APIs.** The best examples are the python sort method and sorted built-in function.
 
 ```python
 names = ['Kasozi', 'Martin', 'Newton', 'Grady']
@@ -221,13 +266,13 @@ marks = [43, 78, 56, 90, 23]
 def sort_marks(marks : List[int]) -> None:
     marks.sort()
 
-def find_average(marks : List[int]) -> float:
+def calculate_average(marks : List[int]) -> float:
     return sum(marks)/float(len(marks))
 ```
 
-From the above code snippet, we have two funtions that both read the same list. `sort_marks()` mutates its input argument and this is not good. Now imagine a scenario when find_average_mark was running and before it completed, it was context switchesd and `sort_marks()` allowed to run.
+From the above code snippet, we have two functions that both read the same list. `sort_marks()` mutates its input argument and this is not good. Now imagine a scenario when `calculate_average_mark()` was running and before it completed, it was context switched and `sort_marks()` allowed to run.
 
-sort_marks will update the list in place and change the order of elements in the list, by the time find_average will run again, it will be reading garbage.
+sort_marks will update the list in place and change the order of elements in the list, by the time `calculate_average_average()` will run again, it will be reading garbage.
 
 **Good :smile:**
 
@@ -260,22 +305,50 @@ second argument, which is a function from int to `bool`: a predicate on int.
 
 But is not honest enough. What happens if we pass in an empty list?? This function may throw an exception.
 
-> Exceptions are hidden outputs from functions and functions that use exceptions have side effects. This is why functional programming pure functions use other strategies like the **Monads** in Haskell.
+> @icon-info-circle Exceptions are hidden outputs from functions and functions that use exceptions have side effects. This is why functional programming pure functions use other strategies like the **Monads** in Haskell.
 
+**Bad** :angry: 
 ```python
 def find_quotient(first : int, second : int)-> float:
-    return first/second
+    try:
+        return first/second
+    except ZeroDivisionError:
+        return None
 ```
 
-What is wrong with such a function?
+What is wrong with such a function? In its signature, it claims to return a float but we can see that sometimes it fails. Such a function is not honest and such functions should be avoided.
+
+#### I/O
+Functions that perform input/output aren't pure too. Why? This is because they return different outputs when given the same input argument. Let me explain more about this. Imagine a function that takes in an URL and returns HTML, if the HTML is changed, the function will return a different output but it is still taking in the same URL. Remember mathematical functions don't behave like this.
+
+```python
+def read_HTML(url : str)-> str:
+    try:
+        with open(url) as file:
+            data = file.read()
+        data = file.read()
+        return data
+    except FileNotFoundError:
+        print('File Not found')
+```
+This function is plagued with more than one problem.
+- Its signature is not honest. It claims that the function returns a string and takes in a string but from the implementation, we see it can fail.
+- This function is performing IO. IO operations produce side effects and thus this function is not pure.
+
+
+> @icon-info-circle You can build pure functions in python with the help of the **operator** and **functools** modules. There is a package **fn.py** to support functional programming in Python 2 and 3. According
+to its author, Alexey Kachayev, fn.py provides “implementation of missing features to
+enjoy FP” in Python. It includes a @recur.tco decorator that implements tail-call optimization
+for unlimited recursion in Python, among many other functions, data structures,
+and recipes.
 
 ### Command-Query-Separation
 
-### Don't-Repeat-Yourself (DRY)
+### Don't Repeat Yourself (DRY)
 
 ## **SOLID Principles**
 
-### 1. Single-Responsibility-Principle
+### 1. Single Responsibility Principle
 
 The single responsibility principle (SRP) instructs developers to write code that has one and only one
 reason to change. If a class has more than one reason to change, it has more than one responsibility.
