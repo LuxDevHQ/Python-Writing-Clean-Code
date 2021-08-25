@@ -63,13 +63,13 @@
 12. [Translation](#translation)
 
 ## Introduction
-
+---
 Software engineering principles, from Robert C. Martin's book
 [_Clean Code_](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882),
 adapted for Python. This is not a style guide. It's a guide to producing readable, reusable, and refactorable software in Python.
 
 ## Naming Things
-
+---
 Modern software is so complex that no one can understand all parts of a non-trivial project alone. The only way humans tame details is through abstractions. With abstraction, we focus on the essential and forget about the non-essential. You remember the way you learned body biology?? You focused on one system at a time, digestive, nervous, cardiovascular e.t.c That is abstraction at work.
 
 The most fundamental abstraction in writing software is **naming**. Naming things is just one part of the story, using good names is a skill that unfortunately, is not owned by most programmers.
@@ -87,7 +87,7 @@ This rule enforces that programmers should make their code read like well writte
 of their code perfectly. With such good naming, a programmer will never need to resort to comments or unnecessary <br> doc strings.
 Below is a code snippet from a software system. Would you make sense of it without any explanation?
 
-**Bad: :angry: **
+**Bad** :angry:
 
 ```python
 from typing import List
@@ -105,7 +105,7 @@ The programmer assumes that each order is coded as a list of `ints` (`List[int]`
 
 Notice the first problem... that snippet doesn't contain knowledge about the domain. This is a design smell known as a **missing abstraction**. We are missing the Order abstraction.
 
-> @icon-info-circle **Missing Abstraction** <br>
+> **Missing Abstraction** <br>
 > This smell arises when clumps of data are used instead creating a class or an interface
 
 We have a thorny problem right now, we lack meaningful domain abstractions. One of the ways of solving the missing abstraction smell is to **map domain entities**. So lets create an abstraction called Order.
@@ -124,7 +124,7 @@ class Order:
     #more code goes here
 ```
 
-> @icon-info-circle We could also have used the **namedtuple** in the python standard library but we won't be too functional that early. Let us stick with OOP for now. **namedtuples** contain only data and not data with code that acts on it.
+> We could also have used the **namedtuple** in the python standard library but we won't be too functional that early. Let us stick with OOP for now. **namedtuples** contain only data and not data with code that acts on it.
 
 Let us now refactor our entity names and use our newly created abstraction too. We arrive at the following code snippet.
 
@@ -139,11 +139,11 @@ This function reads like well written prose.
 
 Notice that the `get_pending_orders()` function delegates the logic of finding the order status to the Order class. This is because the Order class knows its internal representation more than anyone else, so it better implement this logic. This is known as the **Most Qualified Rule** in OOP.
 
-> @icon-info-circle **Most Qualified Rule** <br>
+> **Most Qualified Rule** <br>
 > Work should be assigned to the class that knows best how to do it.
 
 
-> @icon-info-circle We are using the listcomp for a reason. Listcomps are examples of **iterative expressions**. They serve one role and that is creating lists. On the other hand, for-loops are **iterative commands** and thus accomplish a myriad of tasks. Pick the right tool for the job. 
+> We are using the listcomp for a reason. Listcomps are examples of **iterative expressions**. They serve one role and that is creating lists. On the other hand, for-loops are **iterative commands** and thus accomplish a myriad of tasks. Pick the right tool for the job. 
 
 Never allow client code know your implementation details. In fact the ACM A.M Laureate Babra Liskov says it soundly in her book [Program development in Java. Abstraction, Specification and OOD](https://book4you.org/book/1164544/93467d). The **Iterator design pattern** is one way of solving that problem.
 
@@ -165,7 +165,7 @@ sorted(set(dir(list())) - set(dir(set())))
 ```
 Once it has executed, `append()` is one of the returned functions implying that sets don't support `append()` but instead support `add()`. So you write the code below, your code breaks.
 
->@icon-info-circle Sets are not sequences like lists. In fact, they are unordered collections and so adding the `append()` method to the set class would be misleading. `append()` means we are adding at the end which may not be the case with sets.
+>  are not sequences like lists. In fact, they are unordered collections and so adding the `append()` method to the set class would be misleading. `append()` means we are adding at the end which may not be the case with sets.
 
 **Bad** :angry:
 ```python
@@ -179,7 +179,7 @@ In this case, once you decide to change data structure used, your variable won't
 ```python
 students = {'kasozi', 'vincent', 'bob'}
 ```
-> @icon-info-circle You can not achieve good naming with a bad design. You can see that mapping domain entities into our code has made our codebase use natural names.
+> You can not achieve good naming with a bad design. You can see that mapping domain entities into our code has made our codebase use natural names.
 
 ### Meaningful-Distinctions
 
@@ -220,13 +220,14 @@ students = {'kasozi', 'vincent', 'bob'}
 ### Avoid-Side-Effects
 
 #### **Pure Functions**
-
+---
 What on earth is a pure function?? Well, adequately put, a pure function is one without side effects.
 Side effects are invisible inputs and outputs from functions. In pure Functional programming,functions behave like mathematical functions. Mathematical functions are transparent-- they will always return the same output when given the same input. Their output only depends on their inputs.
 
 Below are examples of functions with side effects.
 
 #### **Niladic-Functions**
+---
 
 ```python
 class Customer:
@@ -255,7 +256,7 @@ sorted_names = sorted(names)
 ```
 
 #### **Argument Mutation**
-
+---
 Functions that mutate their input arguments aren't pure functions. This becomes more pronounced when we run on multiple cores. More than one function may be reading from the same variable and each function can be context switched from the CPU at any time. If it was not yet done with editing the variable, others will read garbage.
 
 **Bad :angry:**
@@ -292,7 +293,7 @@ This problem can also be solved by using immutable data structures.
 > Function purity is also vital for unit-testing. Impure functions are hard to test especially if the side effect has to do with I/O. Unlike mutation, you can’t avoid side effects related to I/O; whereas mutation is an implementation detail, I/O is usually a requirement.
 
 #### **Exceptions**
-
+---
 Some function signatures are more expressive than others, by which I mean that they give us
 more information about what the function is doing, what inputs are permissible, and what outputs we can expect. The signature `() → ()`, for example, gives us no information at all: it may print some text, increment a counter, launch a spaceship... who knows! On the other hand, consider this signature:
 
@@ -305,7 +306,7 @@ second argument, which is a function from int to `bool`: a predicate on int.
 
 But is not honest enough. What happens if we pass in an empty list?? This function may throw an exception.
 
-> @icon-info-circle Exceptions are hidden outputs from functions and functions that use exceptions have side effects. This is why functional programming pure functions use other strategies like the **Monads** in Haskell.
+> Exceptions are hidden outputs from functions and functions that use exceptions have side effects. This is why functional programming pure functions use other strategies like the **Monads** in Haskell.
 
 **Bad** :angry: 
 ```python
@@ -319,6 +320,7 @@ def find_quotient(first : int, second : int)-> float:
 What is wrong with such a function? In its signature, it claims to return a float but we can see that sometimes it fails. Such a function is not honest and such functions should be avoided.
 
 #### I/O
+---
 Functions that perform input/output aren't pure too. Why? This is because they return different outputs when given the same input argument. Let me explain more about this. Imagine a function that takes in an URL and returns HTML, if the HTML is changed, the function will return a different output but it is still taking in the same URL. Remember mathematical functions don't behave like this.
 
 ```python
@@ -336,7 +338,7 @@ This function is plagued with more than one problem.
 - This function is performing IO. IO operations produce side effects and thus this function is not pure.
 
 
-> @icon-info-circle You can build pure functions in python with the help of the **operator** and **functools** modules. There is a package **fn.py** to support functional programming in Python 2 and 3. According
+> You can build pure functions in python with the help of the **operator** and **functools** modules. There is a package **fn.py** to support functional programming in Python 2 and 3. According
 to its author, Alexey Kachayev, fn.py provides “implementation of missing features to
 enjoy FP” in Python. It includes a @recur.tco decorator that implements tail-call optimization
 for unlimited recursion in Python, among many other functions, data structures,
@@ -346,9 +348,11 @@ and recipes.
 
 ### Don't Repeat Yourself (DRY)
 
+
 ## **SOLID Principles**
 
 ### 1. Single Responsibility Principle
+---
 
 The single responsibility principle (SRP) instructs developers to write code that has one and only one
 reason to change. If a class has more than one reason to change, it has more than one responsibility.
