@@ -131,11 +131,12 @@ class Order:
 Let us now refactor our entity names and use our newly created abstraction too. We arrive at the following code snippet.
 
 **Better: :smiley:**
+
+```python
 from typing import List
 
 Orders = List[Order]
 
-```python
 def get_pending_orders(orders : Orders)-> Orders:
     return [order for order in orders if order.is_pending()]
 ```
@@ -526,7 +527,7 @@ To solve this problem, we will use inheritance. We will define a new abstract cl
 
 Below is the UML diagram for our new design.
 
-![](image.png)
+![Inheritance Hierachy of SavingsAccount and CheckingAccount](inheritance.PNG)
 
 **BankAccount** class
 
