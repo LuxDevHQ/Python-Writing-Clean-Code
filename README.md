@@ -59,25 +59,25 @@
 11. [Comments](#comments)
 12. [Translation](#translation)
 
-## Introduction
-
----
-
 Software engineering principles, from Robert C. Martin's book
 [_Clean Code_](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882),
 adapted for Python. This is not a style guide. It's a guide to producing readable, reusable, and refactorable software in Python.
+
+## Introduction
+
+---
 
 ## Naming Things
 
 ---
 
-Modern software is so complex that no one can understand all parts of a non-trivial project alone. The only way humans tame details is through abstractions. With abstraction, we focus on the essential and forget about the non-essential. You remember the way you learned body biology?? You focused on one system at a time, digestive, nervous, cardiovascular e.t.c That is abstraction at work.
+Modern software is so complex that no one can understand all parts of a non-trivial project alone. The only way humans tame details is through abstractions. With abstraction, we focus on the essential and forget about the non-essential at that particular time. You remember the way you learned body biology?? You focused on one system at a time, digestive, nervous, cardiovascular e.t.c and ignored the rest. That is abstraction at work.
 
-The most fundamental abstraction in writing software is **naming**. Naming things is just one part of the story, using good names is a skill that unfortunately, is not owned by most programmers.
+A variable name is an abstraction over memory, a function name is an abstraction over logic, a class name is an abstraction over a packet of data and the logic that operates on that data.
 
-We name everything from memory locations, data, pieces of code etc. A name can refer to a simple concept like a variable or a function to complex structures like classes, modules, packages and entire programs.
+The most fundamental abstraction in writing software is **naming**. Naming things is just one part of the story, using good names is a skill that unfortunately, is not owned by most programmers and that is why we have come up with so many refactorings concerned with naming things.
 
-Good names bring order to the chaotic environment of crafting software and hence, we better be good at this skill so that we can enjoy this game.
+Good names bring order to the chaotic environment of crafting software and hence, we better be good at this skill so that we can enjoy our craft.
 
 **[⬆ back to top](#table-of-contents)**
 
@@ -204,6 +204,40 @@ students = {'kasozi', 'vincent', 'bob'}
 **[⬆ back to top](#table-of-contents)**
 
 ### Pronounceable-names
+
+---
+
+When naming things in your code, it is much better to use names that are easy to pronounce by programmers. This enables developers discuss the code without the need to sound silly as they mention the names. If you a polyglot in natural langauges, it is much better to use the language common to most developers when naming your entities.
+
+**Bad** :angry:
+
+```python
+from typing import List
+import math
+
+def sqrs(first_n : int)-> List[int]:
+    if first_n > 0:
+        return [int(math.pow(i, 2)) for i in xrange(first_n)]
+    return []
+
+lstsqrs = sqrs(5)
+```
+
+How can a human pronounce sqrs and lstsqrs? This is a serious problem. Let's correct it.
+
+**Good** :smiley:
+
+```python
+from typing import List
+import math
+
+def generate_squares(first_n : int)-> List[int]:
+    if first_n > 0:
+        return [int(math.pow(i, 2)) for i in xrange(first_n)]
+    return []
+
+squares = generate_squares(5)
+```
 
 **[⬆ back to top](#table-of-contents)**
 
