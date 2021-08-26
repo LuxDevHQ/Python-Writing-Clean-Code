@@ -411,7 +411,7 @@ But is not honest enough. What happens if we pass in an empty list?? This functi
 
 > Exceptions are hidden outputs from functions and functions that use exceptions have side effects.
 
-**Bad** :s
+**Bad** :angry:
 
 ```python
 def find_quotient(first : int, second : int)-> float:
@@ -431,7 +431,7 @@ What is wrong with such a function? In its signature, it claims to return a floa
 
 Functions that perform input/output aren't pure too. Why? This is because they return different outputs when given the same input argument. Let me explain more about this. Imagine a function that takes in an URL and returns HTML, if the HTML is changed, the function will return a different output but it is still taking in the same URL. Remember mathematical functions don't behave like this.
 
-**Bad** :s
+**Bad** :angry:
 
 ```python
 def read_HTML(url : str)-> str:
