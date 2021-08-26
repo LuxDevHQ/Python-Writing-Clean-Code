@@ -350,11 +350,12 @@ sorted_names = sorted(names)
 Functions that mutate their input arguments aren't pure functions. This becomes more pronounced when we run on multiple cores. More than one function may be reading from the same variable and each function can be context switched from the CPU at any time. If it was not yet done with editing the variable, others will read garbage.
 
 **Bad** :angry:
+
+```python
 from typing import List
 
 Marks = List[int]
 
-```python
 marks = [43, 78, 56, 90, 23]
 
 def sort_marks(marks : Marks) -> None:
