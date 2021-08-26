@@ -89,7 +89,7 @@ This rule enforces that programmers should make their code read like well writte
 of their code perfectly. With such good naming, a programmer will never need to resort to comments or unnecessary <br> doc strings.
 Below is a code snippet from a software system. Would you make sense of it without any explanation?
 
-**Bad** :s
+**Bad** :angry:
 
 ```python
 from typing import List
@@ -131,9 +131,12 @@ class Order:
 Let us now refactor our entity names and use our newly created abstraction too. We arrive at the following code snippet.
 
 **Better: :smiley:**
+from typing import List
+
+Orders = List[Order]
 
 ```python
-def get_pending_orders(orders : List[Order])->List[Order]:
+def get_pending_orders(orders : Orders)-> Orders:
     return [order for order in orders if order.is_pending()]
 ```
 
@@ -150,7 +153,7 @@ Never allow client code know your implementation details. In fact the ACM A.M La
 
 Here is another example of a misleading variable name.
 
-**Bad** :s
+**Bad** :angry:
 
 ```python
 student_list= {'kasozi','vincent', 'bob'}
@@ -171,7 +174,7 @@ Once it has executed, `append()` is one of the returned functions implying that 
 
 > Sets are not sequences like lists. In fact, they are unordered collections and so adding the `append()` method to the set class would be misleading. `append()` means we are adding at the end which may not be the case with sets.
 
-**Bad** :s
+**Bad** :angry:
 
 ```python
 student_list= {'kasozi','vincent', 'bob'}
@@ -270,6 +273,8 @@ Below are examples of functions with side effects.
 
 ---
 
+**Bad** :angry:
+
 ```python
 class Customer:
     def __init__(self, first_name : str)-> None:
@@ -286,7 +291,9 @@ Niladic functions have this tendency to depend on some invisible input especiall
 
 The same can be said to functions that return None. These too aren't pure functions. If a function doesn't return, then it is doing something that is affecting global state. **Such functions can not be composed in fluent APIs.** The sort method of the list class has side effects, it changes the list in place whereas the sorted builtin function has not side effects because it returns a new list.
 
-**Bad** :s
+> `sort()` is now discouraged.
+
+**Bad** :angry:
 
 ```python
 names = ['Kasozi', 'Martin', 'Newton', 'Grady']
@@ -307,15 +314,18 @@ sorted_names = sorted(names)
 
 Functions that mutate their input arguments aren't pure functions. This becomes more pronounced when we run on multiple cores. More than one function may be reading from the same variable and each function can be context switched from the CPU at any time. If it was not yet done with editing the variable, others will read garbage.
 
-**Bad** :s
+**Bad** :angry:
+from typing import List
+
+Marks = List[int]
 
 ```python
 marks = [43, 78, 56, 90, 23]
 
-def sort_marks(marks : List[int]) -> None:
+def sort_marks(marks : Marks) -> None:
     marks.sort()
 
-def calculate_average(marks : List[int]) -> float:
+def calculate_average(marks : Marks) -> float:
     return sum(marks)/float(len(marks))
 ```
 
@@ -326,13 +336,20 @@ sort_marks will update the list in place and change the order of elements in the
 **Good :smiley:**
 
 ```python
+from typing import List
+
+Marks = List[int]
+
 marks = [43, 78, 56, 90, 23]
 
 #sort_marks now returns a new list and uses the sorted function
-def sort_marks(marks : List[int]) -> List[int]:
+
+#Mutates input argument
+def sort_marks(marks : Marks) -> Marks:
     return sorted(marks)
 
-def find_average_mark(marks : List[int]) -> float:
+# Doesn't mutate input argument
+def find_average_mark(marks : Marks) -> float:
     return sum(marks)/len(marks)
 ```
 
@@ -457,7 +474,7 @@ class SavingsAccount:
 
 **CheckingAccount class**
 
-**Bad** :s
+**Bad** :angry:
 
 ```python
 class CheckingAccount:
@@ -509,7 +526,7 @@ To solve this problem, we will use inheritance. We will define a new abstract cl
 
 Below is the UML diagram for our new design.
 
-![](inheritance_hierachy_of_accounts.png)
+![](image.png)
 
 **BankAccount** class
 
