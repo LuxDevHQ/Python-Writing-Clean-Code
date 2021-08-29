@@ -7,6 +7,7 @@
 1. [Introduction](#introduction)
 
 2. [Naming Things](#Naming-Things)
+
    - [Use intention revealing name](#Use-intention-revealing-name)
    - [Meaningful Distinctions](#Meaningful-Distinctions)
    - [Avoid Disinformation](#Avoid-Disinformation)
@@ -29,6 +30,7 @@
    - [Use Solution Domain Names]()
    - [Use Problem Domain Names]()
    - [Add Meaningful Context]()
+
 3. [Functions](#functions)
    - [Small](#Small)
    - [Do One Thing](#Do-One-Thing)
@@ -195,15 +197,15 @@ students = {'kasozi', 'vincent', 'bob'}
 
 **[⬆ back to top](#table-of-contents)**
 
-### Meaningful-Distinctions
+## Meaningful-Distinctions
 
 **[⬆ back to top](#table-of-contents)**
 
-### Avoid-Disinformation
+## Avoid-Disinformation
 
 **[⬆ back to top](#table-of-contents)**
 
-### Pronounceable-names
+## Pronounceable-names
 
 ---
 
@@ -281,7 +283,211 @@ squares = generate_squares(5)
 
 **[⬆ back to top](#table-of-contents)**
 
-### Avoid-Conditionals
+### Avoid Conditionals
+
+---
+
+Let us meet Joe. Joe is a junior web developer who works at a certain company in Nairobi. Joe's company has got a new client who wants Joe's company to build him an application to manage his bank.
+
+The client specifies that this application will manage user bank accounts. Joe organizes a meeting with the client and they agree to meet so that Joe can collect the client's business needs. Let us watch Joe as he puts his OOP programming skills to work.
+
+After their meeting, they agree that the user account will be able to accomplish the behaviour specified in the figure below.
+
+![Account class](Account_class.PNG)
+
+The code below provides the implementation details of this class.
+
+```python
+class Account:
+    def __init__(self, acc_number: str, amount: float, name: str):
+        self.acc_number = acc_number
+        self.amount = amount
+        self.name = name
+
+    def get_balance(self) -> float:
+        return self.amount
+
+    def __eq__(self, other: Account) -> bool:
+        if isinstance(other, Account):
+            return self.acc_number == other.acc_number
+
+    def deposit(self, amount: float) -> bool:
+        if amount > 0:
+            self.amount += amount
+
+    def withdraw(self, amount: float) -> None:
+        if (amount > 0) and (amount <= self.amount):
+            self.amount -= amount
+
+    def _has_enough_collateral(self, loan: float) -> bool:
+        if loan < self.amount / 2:
+            return True
+
+    def __str__(self) -> str:
+        return f'Account acc number : {self.acc_number} amount : {self.amount}'
+
+    def add_interest(self) -> None:
+        self.deposit(0.1 * self.amount)
+
+    def get_loan(self, amount : float) -> bool:
+        if self._has_enough_collateral(amount):
+            return True
+        else:
+            return False
+```
+
+The application is a success and after a month, the client comes back to Joe asking for more features. The client says that he now wants the application to work with more than one type of account. The application should now process SavingsAccount and CheckingAccount accounts. The difference between them is outlined below.
+
+- When authorizing a loan, a checking account needs a
+  balance of two thirds the loan amount, whereas savings accounts require only one half the loan amount.
+
+- The bank gives periodic interest to savings accounts but not checking accounts.
+
+- The representation of an account will return
+  “Savings Account” or “Checking Account,” as appropriate.
+
+Joe rolls up his sleeves and starts to make modifications to the original Account class to introduce the new features. Below is his approach.
+
+**Bad** :angry:
+
+```python
+class Account:
+    def __init__(self, acc_number: str, amount: float, name: str, type : int):
+        self.acc_number = acc_number
+        self.amount = amount
+        self.name = name
+        self.type = type
+
+    def _has_enough_collateral(self, loan: float) -> bool:
+        if self.type == 1:
+            return self.amount >= loan / 2;
+        elif selt.type == 2:
+            return self.amount >= 2 * loan / 3;
+        else:
+            return False
+
+    def __str__(self) -> str:
+        if self.type == 1:
+            return ' SavingsAccount'
+        elif self.type == 2:
+            return 'CheckingAccount'
+        else:
+            return 'InvalidAccount'
+
+    def add_interest(self) -> None:
+        if self.type == 1: self.deposit(0.1 * self.amount)
+
+
+    def get_loan(self, amount : float) -> bool:
+        True if self._has_enough_collateral(amount) else False
+
+    #... other methods
+```
+
+> **Note:** We have only shown the methods that changed.
+
+With this implementation, Joe is happy and he ships the app into production since it works as the client had wanted. But something has really gone wrong here.
+
+![conditionals](code_smell.png)
+
+The problem are these conditionals here. They work for now but they will cause a maintenance nightmare very soon. What will happen if the client comes back asking Joe to add more account types? Joe will have to open this class and add more IFs. What happens of the client asks him to delete some of the account types? He will open the same class and edit all Ifs again.
+
+This class is now violating the **Single Responsibility Principle** and the **Open Closed Principle**. The class has more than one reason to change and still, it is not closed for modification and
+these IFs may also run slow.
+
+This smell is called the **Missing Hierarchy** smell.
+
+> **Missing Hierarchy** <br/>
+> This smell arises when a code segment uses conditional logic (typically in conjunction
+> with “tagged types”) to explicitly manage variation in behavior where a hierarchy
+> could have been created and used to encapsulate those variations.
+
+To solve this problem, we will need to introduce an hierarchy of account types.
+We will achieve this by creating a super abstract class Account and implement all the common methods but mark the account specific methods abstract.
+Different account types can then inherit from this base class.
+
+![IF_refactor](IF_Refactor.PNG)
+
+With this new approach, account specific methods will be implemented by subclasses and note that we will throw away those annoying IFs and replace them with polymorphism hence the **Replace Conditionals with Polymorphism** rule.
+
+Below are the implementation of Account, SavingsAccount and CheckingAccount.
+
+![abstract methods](Capture.png)
+
+**SavingsAccount class**
+
+**Good** :smiley:
+
+```python
+class SavingAccount(Account):
+    def __init__(self, acc_number: str, amount: float, name: str):
+        Account.__init__(self, acc_number, amount, name)
+
+    def __eq__(self, other: SavingsAccount) -> bool:
+         if isinstance(other, SavingsAccount):
+            return self.acc_number == other.acc_number
+
+
+    def _has_enough_collateral(self, loan: float) -> bool:
+        return self.amount >= loan / 2;
+
+    def get_loan(self, amount : float) -> bool:
+        return _has_enough_collateral(float)
+
+    def __str__(self) -> str:
+        return f'Saving Account acc number : {self.acc_number}'
+
+    def add_interest(self) -> None:
+        self.deposit(0.1 * self.amount)
+```
+
+**CheckingAccount class**
+
+**Good** :smiley:
+
+```python
+class CheckingAccount(Account):
+    def __init__(self, acc_number: str, amount: float, name: str):
+        Account.__init__(self, acc_number, amount, name)
+
+    def __eq__(self, other: SavingsAccount) -> bool:
+         if isinstance(other, CheckingAccount):
+            return self.acc_number == other.acc_number
+
+
+    def has_enough_collateral(self, loan: float) -> bool:
+        return self.amount >= 2 * loan / 3;
+
+    def get_loan(self, amount : float) -> bool:
+        return _has_enough_collateral(float)
+
+    def __str__(self) -> str:
+        return f'Checking Account acc number : {self.acc_number}'
+
+    #empty method.
+    def add_interest(self) -> None:
+        pass
+```
+
+Notice that each branch of the original annoying `if else` is now implemented in its class. Now if the client comes back and asks Joe to add a fixed deposit account, Joe will just create a new class called FixedDeposit and it will inherit from that abstract Account class. With this design, note that :
+
+- To add new functionality, we add more classes and ignore all existing classes. This is the **Open Closed Principle.**
+
+Note that the CheckingAccount class leaves the add_interest method empty. This is a code smell known as the **Rebellious Hierarchy** design smell and we shall fix it later when we get to the **Interface Segregation Principle**.
+
+> **REBELLIOUS HIERARCHY** <br>
+> This smell arises when a subtype rejects the methods provided by its supertype(s).
+> In this smell, a supertype and its subtypes conceptually share an IS-A relationship,
+> but some methods defined in subtypes violate this relationship. For example, for
+> a method defined by a supertype, its overridden method in the subtype could:
+>
+> - throw an exception rejecting any calls to the method
+> - provide an empty (or NOP i.e., NO Operation) method
+> - provide a method definition that just prints “should not implement” message
+> - return an error value to the caller indicating that the method is unsupported.
+
+After a year, Joe's client comes back and asks Joe to add a Current account. Guess what Joe does?? You guessed right, he just creates a new class for this new account and inherits from Account class as shown in the figure below.
+![CurrentAccount](CurrentAccount.png)
 
 **[⬆ back to top](#table-of-contents)**
 
@@ -302,7 +508,7 @@ squares = generate_squares(5)
 What on earth is a pure function?? Well, adequately put, a pure function is one without side effects.
 Side effects are invisible inputs and outputs from functions. In pure Functional programming,functions behave like mathematical functions. Mathematical functions are transparent-- they will always return the same output when given the same input. Their output only depends on their inputs.
 
-Below are examples of functions with side effects.
+Below are examples of functions with side effects:
 
 #### 1. **Niladic-Functions**
 
@@ -326,7 +532,7 @@ Niladic functions have this tendency to depend on some invisible input especiall
 
 The same can be said to functions that return None. These too aren't pure functions. If a function doesn't return, then it is doing something that is affecting global state. **Such functions can not be composed in fluent APIs.** The sort method of the list class has side effects, it changes the list in place whereas the sorted builtin function has not side effects because it returns a new list.
 
-> `sort()` is now discouraged.
+> `sort()` and `reverse()` are now discouraged and instead using the built-in `reversed()` and `sorted()` are encouraged.
 
 **Bad** :angry:
 
@@ -473,7 +679,7 @@ We roll up our sleeves and put our OOP knowledge to test. We craft two classes t
 
 **SavingsAccount class**
 
-**Bad** :s
+**Bad** :angry:
 
 ```python
 class SavingsAccount:
@@ -487,7 +693,7 @@ class SavingsAccount:
 
     def __eq__(self, other: SavingsAccount) -> bool:
         if isinstance(other, SavingsAccount):
-            return self.account == other.acc_number
+            return self.acc_number == other.acc_number
 
     def deposit(self, amount: float) -> bool:
         if amount > 0:
@@ -524,7 +730,7 @@ class CheckingAccount:
 
     def __eq__(self, other: SavingsAccount) -> bool:
         if isinstance(other, SavingsAccount):
-            return self.account == other.acc_number
+            return self.acc_number == other.acc_number
 
     def deposit(self, amount: float) -> bool:
         if amount > 0:
@@ -545,7 +751,19 @@ class CheckingAccount:
         self.deposit(0.5 * self.amount)
 ```
 
-Below is the Unified Modeling Language (UML) class diagrams of both classes.
+The table describes all the methods added to both classes.
+
+| method                    | description                                         |
+| ------------------------- | --------------------------------------------------- |
+| `get_balance()`           | returns the account balance                         |
+| `__str__()`               | returns the string representation of account object |
+| `add_interest()`          | adds a given interest to a given account            |
+| `has_enough_collateral()` | checks if the account can be granted a loan         |
+| `withdraw()`              | withdraws a given amount from the account           |
+| `deposit()`               | deposits an amount to the account                   |
+| `__eq__()`                | checks if 2 accounts are the same                   |
+
+The Unified Modeling Language (UML) class diagrams of both classes are shown below. Notice the dulication in method names.
 
 ![](umlsc.PNG)
 
@@ -618,7 +836,7 @@ class SavingAccount(BankAccount):
 
     def __eq__(self, other: SavingsAccount) -> bool:
          if isinstance(other, SavingsAccount):
-            return self.account == other.acc_number
+            return self.acc_number == other.acc_number
 
 
     def has_enough_collateral(self, loan: float) -> bool:
@@ -645,7 +863,7 @@ class CheckingAccount(BankAccount):
 
     def __eq__(self, other: SavingsAccount) -> bool:
          if isinstance(other, CheckingAccount):
-            return self.account == other.acc_number
+            return self.acc_number == other.acc_number
 
 
     def has_enough_collateral(self, loan: float) -> bool:
