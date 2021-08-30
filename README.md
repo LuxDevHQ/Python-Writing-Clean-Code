@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-![Uncle Bob surrounded with computers](Robert_C._Martin_surrounded_by_computers.jpg)
+![Uncle Bob surrounded with computers](assets/Robert_C._Martin_surrounded_by_computers.jpg)
 
 1. [Introduction](#introduction)
 
@@ -293,7 +293,7 @@ The client specifies that this application will manage user bank accounts. Joe o
 
 After their meeting, they agree that the user account will be able to accomplish the behaviour specified in the figure below.
 
-![Account class](Account_class.PNG)
+![Account class](assets/Account_class.PNG)
 
 The code below provides the implementation details of this class.
 
@@ -388,7 +388,7 @@ class Account:
 
 With this implementation, Joe is happy and he ships the app into production since it works as the client had wanted. But something has really gone wrong here.
 
-![conditionals](code_smell.png)
+![conditionals](assets/code_smell.png)
 
 The problem are these conditionals here. They work for now but they will cause a maintenance nightmare very soon. What will happen if the client comes back asking Joe to add more account types? Joe will have to open this class and add more IFs. What happens of the client asks him to delete some of the account types? He will open the same class and edit all Ifs again.
 
@@ -406,13 +406,13 @@ To solve this problem, we will need to introduce an hierarchy of account types.
 We will achieve this by creating a super abstract class Account and implement all the common methods but mark the account specific methods abstract.
 Different account types can then inherit from this base class.
 
-![IF_refactor](IF_Refactor.PNG)
+![IF_refactor](assets/IF_Refactor.PNG)
 
 With this new approach, account specific methods will be implemented by subclasses and note that we will throw away those annoying IFs and replace them with polymorphism hence the **Replace Conditionals with Polymorphism** rule.
 
 Below are the implementation of Account, SavingsAccount and CheckingAccount.
 
-![abstract methods](Capture.png)
+![abstract methods](assets/Capture.png)
 
 **SavingsAccount class**
 
@@ -487,7 +487,7 @@ Note that the CheckingAccount class leaves the add_interest method empty. This i
 > - return an error value to the caller indicating that the method is unsupported.
 
 After a year, Joe's client comes back and asks Joe to add a Current account. Guess what Joe does?? You guessed right, he just creates a new class for this new account and inherits from Account class as shown in the figure below.
-![CurrentAccount](CurrentAccount.png)
+![CurrentAccount](assets/CurrentAccount.png)
 
 **[⬆ back to top](#table-of-contents)**
 
@@ -780,7 +780,7 @@ To solve this problem, we will use inheritance. We will define a new abstract cl
 
 Below is the UML diagram for our new design.
 
-![Inheritance Hierachy of SavingsAccount and CheckingAccount](inheritance.PNG)
+![Inheritance Hierachy of SavingsAccount and CheckingAccount](assets/inheritance.PNG)
 
 **BankAccount** class
 
