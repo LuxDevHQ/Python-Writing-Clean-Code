@@ -883,6 +883,8 @@ With this new design, if we ever want to modify the methods common to both class
 
 ## **SOLID Principles**
 
+---
+
 ### 1. Single Responsibility Principle
 
 ---
@@ -892,10 +894,354 @@ reason to change. If a class has more than one reason to change, it has more tha
 Classes with more than a single responsibility should be broken down into smaller classes, each of
 which should have only one responsibility and reason to change.
 
-This section explains that process and shows you how to create classes that only have a single
-responsibility but are still useful. Through a process of delegation and abstraction, a class that contains
-too many reasons to change should delegate one or more responsibilities to other classes.
-
 It is difficult to overstate the importance of delegating to abstractions. It is the lynchpin of adaptive
 code and, without it, developers would struggle to adapt to changing requirements in the way
 that Scrum and other Agile processes demand.
+
+Let us meet Vincent. Vincent is a developer and he loves his job really a lot.Vincent loves to keep learning and he buys books that talk about software but he is always busy that he fails to read them. Vincent has a new client that wants an application developed for him.
+
+**_The client wants a program that reads trade records from a file, parse them, log any errors, process the records and them save them to a database._**
+
+With these requirements, Vincent works out a first prototype of this application and tests to see if it works as the client wanted. Below is the class code.
+
+![TradeProcessor](assets/TradeProcessclass.PNG)
+
+```python
+from typing import List
+from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy.orm import sessionmaker
+from base import Base
+
+class TradeProcessor(object):
+    @staticmethod
+    def process_trades(filename):
+        lines: List[str] = []
+        with open(filename) as ft:
+            for line in ft: lines.append(line)
+        trades: List[TradeRecord] = []
+
+        for index, line in enumerate(lines):
+            fields = line.split(',')
+            if len(fields) != 3:
+                print(f'Line {index} malformed. Only {len(fields)} field(s) found.')
+                continue
+            if len(fields[0]) != 6:
+                print(f'Trade currencies on line {index} malformed: "{fields[0]}"')
+                continue
+            trade_amount = 0
+            try:
+                trade_amount = float(fields[1])
+            except ValueError:
+                print(f"WARN: Trade amount on line {index} not a valid integer: '{fields[1]}'")
+
+            trade_price = 0
+            try:
+                trade_price = float(fields[2])
+            except ValueError:
+                print(f"WARN: Trade price on line {index} not a valid decimal:'{fields[2]}'")
+
+            print(trade_amount)
+            sourceCurrencyCode = fields[0][:3]
+            destinationCurrencyCode = fields[0][3:]
+            trade = TradeRecord(source=sourceCurrencyCode, dest=destinationCurrencyCode,
+                                lots=trade_amount, amount=trade_price)
+            trades.append(trade)
+
+        engine = create_engine('postgresql://postgres:u2402/598@localhost:5432/python')
+        Session = sessionmaker(bind=engine)
+        Base.metadata.create_all(engine)
+        session = Session()
+        for trade in trades:
+            session.add(trade)
+        session.commit()
+        session.close()
+```
+
+> **Note :** In this example we used the SqlAlchemy ORM for persistence but we could have used any DB APIs out there.
+
+Below is the code for the TradeRecord class that SqlAlchemy uses to persist our data.
+
+```python
+class TradeRecord(Base):
+    __tablename__ = 'TradeRecord'
+    id = Column(Integer, primary_key=True)
+    source_curreny = Column(String)
+    dest_currency = Column(String)
+    lots = Column(Integer)
+    amount = Column(Float)
+
+    def __init__(self, source, dest, lots, amount):
+        self.source_curreny = source
+        self.dest_currency = dest
+        self.lots = lots
+        self.amount = amount
+```
+
+If you look closely at the TradeProcessor class, it is the best example of a class that has a ton of responsibilities to change. The method `process_trades` is a hidden class within itself. It is doing more than one thing as listed below.
+
+1. It reads every line from a File object, storing each line in a list of strings.
+2. It parses out individual fields from each line and stores them in a more structured list of
+   Trade­Record instances.
+3. The parsing includes some validation and some logging to the console.
+4. Each TradeRecord is then stored to a database.
+
+We can see that the responsibilities of the TradeProcessor are :
+
+1. Reading files
+2. Parsing strings
+3. Validating string fields
+4. Logging
+5. Database insertion.
+
+The single responsibility principle states that this class, like all others,
+should only have a single reason to change. However, the reality of the TradeProcessor is that it will
+change under the following circumstances:
+
+- When the client decides not to use a file for input but instead read the trades from a remote call to a web service.
+- When the format of the input data changes, perhaps with the addition of an extra field indicating the broker for the transaction.
+- When the validation rules of the input data change.
+- When the way in which you log warnings, errors, and information changes. If you are using a
+  hosted web service, writing to the console would not be a viable option.
+- When the database changes in some way for example the client decides not to store the data in a relational database and opt for document storage, or the database is moved behind a web service that
+  you must call.
+
+For each of these changes, this class would have to be modified. Furthermore, unless you maintain
+a variety of versions, there is no possibility of adapting the TradeProcessor so that it is able to read
+from a different input source, for example. Imagine the maintenance headache when you are asked to
+add the ability to store the trades in a web service!!!
+
+### **Refactoring towards the SRP**
+
+---
+
+The first thing we are going to do is to break down the monstrous `process_trades()` method into smaller more specialized methods that do only one thing. Here we go.
+
+#### **Refactor for clarity**
+
+If you look closely, the `process_trades()` method is doing 3 things:
+
+1. Reading data from the file.
+2. Parsing and Logging and
+3. Storing to the data.
+
+![process_trades_refactor](<assets/process_trades%20(2).png>)
+
+So we can from a very high level refactor it to something like below
+
+```python
+ @staticmethod
+    def process_trades(filename):
+        lines: List[str] = TradeProcessor.__read_trade_data(filename)
+        trades: List[TradeRecord] = TradeProcessor.__parse_trades(lines)
+        TradeProcessor.__store_trades(trades)
+```
+
+> Notice how these 4 smaller methods are easier to test than the original monolith!!
+
+![TradeProcessor_class refactor](assets/methods_refactor.PNG)
+Now let us look into the implementations of these new more focused methods.
+
+#### read_trade_data()
+
+---
+
+```python
+@staticmethod
+    def __read_trade_data(filename: str) -> List[str]:
+        lines: List[str]
+        lines = [line for line in open(filename)]
+        return lines
+```
+
+This method takes in the name of the file to read, it uses a list comprehension to enumerate over the read lines and returns a list of strings. Really simple!!!.
+
+#### parse_trades
+
+---
+
+```python
+@staticmethod
+    def __parse_trades(trade_data: List[str]) -> List[TradeRecord]:
+        trades: List[TradeRecord] = []
+        for index, line in enumerate(trade_data):
+            fields: List[str] = line.split(',')
+            if not TradeProcessor.__validate_trade_data(fields, index + 1):
+                continue
+            trade = TradeProcessor.__create_trade_record(fields)
+            trades.append(trade)
+        return trades
+```
+
+This method takes in a list of strings produced by the `read_trade_data()` methods and tries to parse according to a given structure. **methods should do only one thing** and hence the `parse_trades()` method delegates to two other methods to accomplish its task.
+
+1. The `validate_trade_data()` method. This is responsible for validating the read string to check if it follows a given format.
+2. The `create_trade_record()` method. This takes in a list of validated strings and uses them to create a `TradeRecord` object to persist to the database.
+
+Let us work on the implements of these two new methods.
+
+### validate_trade_data()
+
+---
+
+```python
+   @staticmethod
+    def __validate_trade_data(fields: List[str], index: int) -> bool:
+        if len(fields) != 3:
+            TradeProcessor.__log_message(f'WARN: Line {index} malformed. Only {len(fields)} field(s) found.')
+            return False
+        if len(fields[0]) != 6:
+            TradeProcessor.__log_message(f'WARN: Trade currencies on line {index} malformed: {fields[0]}')
+            return False
+        try:
+            trade_amount = float(fields[1])
+        except ValueError:
+            TradeProcessor.__log_message(f"WARN: Trade amount on line {index} not a valid integer: '{fields[1]}'")
+            return False
+        try:
+            trade_price = float(fields[2])
+        except ValueError:
+            TradeProcessor.__log_message(f'WARN: Trade price on line {index} not a valid decimal:{fields[2]}')
+            return False
+        return True
+```
+
+This method should be self explanatory since it is a refactor from the original `process_trades()` method. One thing has changed in it. The method no longer does the logging by itself. It delegates the logging to another method called `log_message()`. We shall see the advantage of this later.
+
+Below is the implementation of the `log_message()` method.
+
+```python
+@staticmethod
+def __log_message(message: str) -> None:
+    print(message)
+```
+
+### create_trade_record()
+
+---
+
+```python
+@staticmethod
+    def __create_trade_record(fields: List[str]) -> TradeRecord:
+        in_curr = slice(0, 3);
+        out_curr = slice(3, None)
+        source_curr_code = fields[0][in_curr]
+        dest_curr_code = fields[0][out_curr]
+        trade_amount = int(fields[1])
+        trade_price = float(fields[2])
+
+        trade_record = TradeRecord(source_curr_code, dest_curr_code,
+                                   trade_amount, trade_price)
+        return trade_record
+```
+
+This is also straight forward. The reason why we use slice objects here is to make our code readable. The last method we will look at is the `store_trades()` which persists our data to a database.
+
+### store_trades()
+
+---
+
+```python
+@staticmethod
+    def __store_trades(trades: List[TradeRecord]) -> None:
+        engine = create_engine('postgresql://postgres:54875/501@localhost:5432/python')
+        Session = sessionmaker(bind=engine)
+        Base.metadata.create_all(engine)
+        session = Session()
+        for trade in trades:
+            session.add(trade)
+        session.commit()
+        session.close()
+        TradeProcessor.__log_message(f'{len(trades)} trades processed')
+
+```
+
+This method uses an ORM known as SQLAlchemy to persist our data. ORMs write the SQL for us behind the scene and this increases the flexibility of our application.
+
+> This method is far from ideal, notice that it hard codes the connection strings and this very bad. There are tones of github repositories with exposed database connection strings. It would be better to read the connection string from a configuration file and add the configure file to gitignore.
+
+At the moment, our class that had only one big method now has a bunch of methods as shown in the following code snippet and UML class diagram:
+
+```python
+
+class TradeProcessor(object):
+    @staticmethod
+    def process_trades(filename):
+        lines: List[str] = TradeProcessor.read_trade_data(filename)
+        trades: List[TradeRecord] = TradeProcessor.parse_trades(lines)
+        TradeProcessor.store_trades(trades)
+
+    @staticmethod
+    def read_trade_data(filename: str) -> List[str]:
+        lines: List[str]
+        lines = [line for line in open(filename)]
+        return lines
+
+    @staticmethod
+    def log_message(message: str) -> None:
+        print(message)
+
+    @staticmethod
+    def validate_trade_data(fields: List[str], index: int) -> bool:
+        if len(fields) != 3:
+            TradeProcessor.log_message(f'WARN: Line {index} malformed. Only {len(fields)} field(s) found.')
+            return False
+        if len(fields[0]) != 6:
+            TradeProcessor.log_message(f'WARN: Trade currencies on line {index} malformed: {fields[0]}')
+            return False
+        try:
+            trade_amount = float(fields[1])
+        except ValueError:
+            TradeProcessor.log_message(f"WARN: Trade amount on line {index} not a valid integer: '{fields[1]}'")
+            return False
+        try:
+            trade_price = float(fields[2])
+        except ValueError:
+            TradeProcessor.log_message(f'WARN: Trade price on line {index} not a valid decimal:{fields[2]}')
+            return False
+        return True
+
+    @staticmethod
+    def create_trade_record(fields: List[str]) -> TradeRecord:
+        in_curr = slice(0, 3);
+        out_curr = slice(3, None)
+        source_curr_code = fields[0][in_curr]
+        dest_curr_code = fields[0][out_curr]
+        trade_amount = int(fields[1])
+        trade_price = float(fields[2])
+
+        trade_record = TradeRecord(source_curr_code, dest_curr_code,
+                                   trade_amount, trade_price)
+        return trade_record
+
+    @staticmethod
+    def parse_trades(trade_data: List[str]) -> List[TradeRecord]:
+        trades: List[TradeRecord] = []
+        for index, line in enumerate(trade_data):
+            fields: List[str] = line.split(',')
+            if not TradeProcessor.validate_trade_data(fields, index + 1):
+                continue
+            trade = TradeProcessor.create_trade_record(fields)
+            trades.append(trade)
+        return trades
+
+    @staticmethod
+    def store_trades(trades: List[TradeRecord]) -> None:
+        engine = create_engine('postgresql://postgres:u2402/501@localhost:5432/python')
+        Session = sessionmaker(bind=engine)
+        Base.metadata.create_all(engine)
+        session = Session()
+        for trade in trades:
+            session.add(trade)
+        session.commit()
+        session.close()
+        TradeProcessor.log_message(f'{len(trades)} trades processed')
+
+
+```
+
+![Refactored TradeProcessor class](assets/Refactored_TradeProcessClass.PNG)
+
+Looking back at this refactor, it is a clear improvement on the original implementation. However, what have you really achieved? Although the new ProcessTrades method is indisputably smaller
+than the monolithic original, and the code is definitely more readable, you have gained very little by way of adaptability. You can change the implementation of the LogMessage method so that it, for example, writes to a file instead of to the console, but that involves a change to the TradeProcessor class, which is precisely what you wanted to avoid.
+
+This refactor has been an important stepping stone on the path to truly separating the responsibilities of this class. It has been a **refactor for clarity**, not for adaptability. The next task is to split each responsibility into different classes and place them behind interfaces. What you need is true abstraction to achieve useful adaptability.
