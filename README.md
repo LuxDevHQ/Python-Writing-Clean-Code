@@ -245,6 +245,36 @@ squares = generate_squares(5)
 
 ### Searchable-Names
 
+For example, you`re looking for some part of code where you calculate something and remember that was about work days in week
+
+**Bad** :angry:
+
+```python
+for i in range(0,34):
+     s += (t[i]*4)/5 
+```
+
+
+What is easier to find ```5``` or ```WORK_DAYS_PER_WEEK```?
+
+
+It`s normally to name local variable as one char in short functions but if you can avoid it 
+
+**Good** :smiley:
+
+```python
+from typing import Final
+
+
+real_days_per_ideal_day: int = 4 
+WORK_DAYS_PER_WEEK: Final[int] = 5
+sum: int = 0
+for i in range(0,number_of_tasks):
+    real_task_days: int = task_estimate[i] * real_days_per_ideal_day
+    real_task_weeks: int = real_task_days / WORK_DAYS_PER_WEEK
+    sum: int += real_task_weeks
+```
+
 **[⬆ back to top](#table-of-contents)**
 
 ### Don't-be-cute
